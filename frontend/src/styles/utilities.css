@@ -1,0 +1,12 @@
+/* Override Tailwind Preflight to prevent IDE warnings on build */
+svg, img, video, canvas, audio, iframe, embed, object {
+  vertical-align: baseline; /* Normalizing vertical-align to avoid conflicts with display: block */
+}
+
+/* Explicit line-clamp definitions to satisfy standard CSS linters */
+.line-clamp-1 { -webkit-line-clamp: 1; line-clamp: 1; }
+.line-clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+.line-clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+.line-clamp-4 { -webkit-line-clamp: 4; line-clamp: 4; }
+.line-clamp-5 { -webkit-line-clamp: 5; line-clamp: 5; }
+.line-clamp-6 { -webkit-line-clamp: 6; line-clamp: 6; }

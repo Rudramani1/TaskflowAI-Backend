@@ -1,0 +1,61 @@
+title,storyPoints,daysToComplete,dueDate,completedOnTime
+Implement Auth UI,5,3,2026-05-01,true
+Fix Navbar bug,2,1,2026-05-02,true
+Database Schema,8,5,2026-05-05,true
+Integrate Stripe,13,8,2026-05-06,false
+User Profile page,5,4,2026-05-08,true
+Add dark mode,3,2,2026-05-10,true
+Notification system,8,6,2026-05-15,false
+Email templates,3,2,2026-05-16,true
+Reset password flow,5,3,2026-05-18,true
+Dashboard charts,8,5,2026-05-20,true
+Export to CSV feature,5,3,2026-05-22,true
+Unit tests for Auth,3,2,2026-05-24,true
+E2E tests,8,6,2026-05-25,false
+Refactor API routes,5,4,2026-05-28,true
+Optimize images,2,1,2026-05-29,true
+Update dependencies,1,1,2026-05-30,true
+SEO improvements,3,2,2026-06-01,true
+Deploy to production,5,3,2026-06-05,true
+Setup CI/CD pipeline,8,6,2026-06-06,false
+Fix login redirect bug,2,1,2026-06-08,true
+Implement Search,8,5,2026-06-10,true
+Search filters,5,3,2026-06-12,true
+Pagination,3,2,2026-06-14,true
+Sorting columns,2,1,2026-06-15,true
+Mobile responsiveness,8,6,2026-06-18,false
+Tablet view fixes,3,2,2026-06-20,true
+Add animations,2,1,2026-06-22,true
+Redesign landing page,13,9,2026-06-25,false
+Pricing page,5,3,2026-06-28,true
+Contact form,3,2,2026-06-30,true
+Admin dashboard,8,5,2026-07-02,true
+User management,5,4,2026-07-05,true
+Role based access,8,6,2026-07-08,false
+Activity logs,5,3,2026-07-10,true
+Webhooks setup,8,5,2026-07-12,true
+API documentation,5,3,2026-07-15,true
+Rate limiting,3,2,2026-07-18,true
+Caching with Redis,8,6,2026-07-20,false
+Fix cache invalidation,2,1,2026-07-22,true
+Database indexing,5,3,2026-07-25,true
+Slow query optimization,8,5,2026-07-28,true
+Analytics tracking,5,4,2026-07-30,true
+A/B testing setup,8,6,2026-08-01,false
+Feedback form,3,2,2026-08-05,true
+Onboarding tutorial,5,3,2026-08-08,true
+Tooltips,2,1,2026-08-10,true
+Keyboard shortcuts,5,3,2026-08-12,true
+Offline support,13,8,2026-08-15,false
+PWA manifest,2,1,2026-08-18,true
+Push notifications,8,5,2026-08-20,true
+Localization setup,8,6,2026-08-22,false
+Add Spanish language,5,4,2026-08-25,true
+Add French language,5,3,2026-08-28,true
+Right to left support,8,5,2026-08-30,true
+Accessibility audit,5,3,2026-09-02,true
+Fix contrast issues,3,2,2026-09-05,true
+Screen reader support,5,4,2026-09-08,true
+GDPR compliance,8,6,2026-09-10,false
+Cookie banner,2,1,2026-09-12,true
+Terms of service page,1,1,2026-09-15,true
