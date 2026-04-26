@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://taskflowai-backend.onrender.com',
+        target: 'https://taskflowai-backend.onrender.com/',
         changeOrigin: true
       }
     }
