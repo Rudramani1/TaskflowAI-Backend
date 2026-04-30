@@ -21,6 +21,8 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+# .env.example files ARE committed (they are templates)
+!.env.example
 
 # IDEs
 .idea/
@@ -28,3 +30,7 @@ out/
 *.swp
 *.swo
 .DS_Store
+
+# Uploads (Multer temp files)
+uploads/
+

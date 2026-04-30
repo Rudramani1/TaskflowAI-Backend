@@ -5,12 +5,19 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'https://taskflowai-backend.onrender.com/',
-        changeOrigin: true
+    port: 5173
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts']
+        }
       }
     }
   }
 });
+

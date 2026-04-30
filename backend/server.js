@@ -11,17 +11,32 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+// ── CORS — supports comma-separated CLIENT_URL and Vercel preview deploys ──
+const allowedOrigins = (process.env.CLIENT_URL || 'https://taskflow-ai-ruddy-nine.vercel.app')
+  .split(',')
+  .map(o => o.trim());
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://taskflow-ai-ruddy-nine.vercel.app',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow exact matches from CLIENT_URL
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any Vercel preview deployment for this project
+    if (origin.match(/^https:\/\/taskflow-ai.*\.vercel\.app$/)) return callback(null, true);
+    // Allow localhost during development
+    if (origin.match(/^http:\/\/localhost:\d+$/)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('TaskFlow AI Backend Running 🚀');
+  res.json({ status: 'ok', service: 'TaskFlow AI Backend', timestamp: new Date().toISOString() });
 });
 
 // Health check
@@ -76,10 +91,11 @@ initTransporter();
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 TaskFlow AI server running on port ${PORT}`);
     console.log(`📡 SSE endpoint: /api/sse`);
     console.log(`🧠 AI Engine: Self-learning (rule-based → data-trained)`);
+    console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
   });
 });
 
