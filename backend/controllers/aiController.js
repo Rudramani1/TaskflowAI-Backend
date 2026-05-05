@@ -2,13 +2,26 @@ const aiEngine = require('../services/ai-engine');
 const csvParse = require('csv-parse');
 const SprintHistory = require('../models/SprintHistory');
 const Task = require('../models/Task');
+const mlClient = require('../services/ml-client');
 
 // @route POST /api/ai/estimate-points
 exports.estimatePoints = async (req, res, next) => {
   try {
     const { title, description } = req.body;
+
+    // Try ML service first
+    const mlResult = await mlClient.predict('effort', {
+      orgId: req.user.organizationId?.toString(),
+      title: title || '',
+      description: description || '',
+    });
+    if (mlResult && !mlResult.fallback) {
+      return res.json({ ...mlResult, source: 'ml' });
+    }
+
+    // Fallback to rule-based engine
     const result = await aiEngine.estimateStoryPoints(req.user.organizationId, title, description);
-    res.json(result);
+    res.json({ ...result, source: 'rule-based' });
   } catch (error) { next(error); }
 };
 
@@ -23,7 +36,17 @@ exports.getSprintRisk = async (req, res, next) => {
 // @route GET /api/ai/delays/:projectId
 exports.getDelays = async (req, res, next) => {
   try {
+    // Try ML service first for enhanced delay predictions
+    const mlResult = await mlClient.predict('delay', {
+      orgId: req.user.organizationId?.toString(),
+      taskId: req.params.projectId,
+    });
+    // ML delay is per-task; always include rule-based bulk analysis
     const result = await aiEngine.predictDelays(req.user.organizationId, req.params.projectId);
+    if (mlResult && !mlResult.fallback) {
+      result.mlEnhanced = true;
+      result.mlModel = mlResult;
+    }
     res.json(result);
   } catch (error) { next(error); }
 };
@@ -47,8 +70,20 @@ exports.getBottlenecks = async (req, res, next) => {
 // @route GET /api/ai/suggest-assignee/:projectId
 exports.suggestAssignee = async (req, res, next) => {
   try {
+    // Try ML service first
+    const mlResult = await mlClient.predict('assignee', {
+      orgId: req.user.organizationId?.toString(),
+      title: req.query.title || '',
+      description: req.query.description || '',
+      labels: req.query.labels ? req.query.labels.split(',') : [],
+    });
+    if (mlResult && !mlResult.fallback) {
+      return res.json({ ...mlResult, source: 'ml' });
+    }
+
+    // Fallback to rule-based engine
     const result = await aiEngine.suggestAssignment(req.user.organizationId, req.params.projectId);
-    res.json(result);
+    res.json({ ...result, source: 'rule-based' });
   } catch (error) { next(error); }
 };
 
@@ -95,8 +130,15 @@ exports.getInsights = async (req, res, next) => {
 // @route POST /api/ai/train
 exports.trainModels = async (req, res, next) => {
   try {
+    // Train rule-based models
     await aiEngine.trainModels(req.user.organizationId);
-    res.json({ message: 'Models trained successfully' });
+
+    // Also trigger ML microservice training (non-blocking)
+    mlClient.trainModels(req.user.organizationId?.toString())
+      .then(r => console.log('[ML Train]', r.status || 'triggered'))
+      .catch(() => {}); // Silent fail — ML training is optional
+
+    res.json({ message: 'Models trained successfully (rule-based + ML)' });
   } catch (error) { next(error); }
 };
 

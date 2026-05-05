@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTasks } from '../hooks/useTasks';
-import { projectAPI, aiAPI, sprintAPI, commentAPI } from '../services/api';
+import { projectAPI, aiAPI, sprintAPI, commentAPI, authAPI } from '../services/api';
 import { statusLabels, priorityLabels, priorityIcons, getAvatarColor, getInitials, formatDate, formatRelativeTime, getDaysUntil } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -11,12 +11,14 @@ const Tasks = () => {
   const { projectId } = useParams();
   const { tasks, loading, createTask, updateTask, deleteTask, getTasksByStatus } = useTasks(projectId);
   const [project, setProject] = useState(null);
+  const [orgMembers, setOrgMembers] = useState([]);
   const [viewMode, setViewMode] = useState('board');
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showAI, setShowAI] = useState(false);
   const [aiData, setAiData] = useState(null);
-  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'p2', status: 'todo', dueDate: '', labels: '', storyPoints: '' });
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'p2', status: 'todo', dueDate: '', labels: '', storyPoints: '', assigneeId: '' });
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [draggedTask, setDraggedTask] = useState(null);
@@ -30,6 +32,7 @@ const Tasks = () => {
 
   useEffect(() => {
     projectAPI.getOne(projectId).then(res => setProject(res.data)).catch(console.error);
+    authAPI.getMembers().then(res => setOrgMembers(res.data.members || [])).catch(console.error);
     sprintAPI.getAll(projectId).then(res => {
       setSprints(res.data);
       const active = res.data.find(s => s.status === 'active');
@@ -71,11 +74,37 @@ const Tasks = () => {
         ...taskForm,
         labels: taskForm.labels ? taskForm.labels.split(',').map(l => l.trim()) : [],
         storyPoints: taskForm.storyPoints ? parseInt(taskForm.storyPoints) : null,
-        sprintId: activeSprint?._id || null
+        sprintId: activeSprint?._id || null,
+        assigneeId: taskForm.assigneeId || null
       });
-      setTaskForm({ title: '', description: '', priority: 'p2', status: 'todo', dueDate: '', labels: '', storyPoints: '' });
+      setTaskForm({ title: '', description: '', priority: 'p2', status: 'todo', dueDate: '', labels: '', storyPoints: '', assigneeId: '' });
       setShowCreateTask(false);
     } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+  };
+
+  const handleSuggestAssignee = async () => {
+    if (!taskForm.title) {
+      alert("Please enter a task title first to get a suggestion.");
+      return;
+    }
+    setIsSuggesting(true);
+    try {
+      const res = await aiAPI.suggestAssignee(projectId, {
+        title: taskForm.title,
+        description: taskForm.description,
+        labels: taskForm.labels
+      });
+      if (res.data && res.data.assigneeId) {
+        setTaskForm(prev => ({ ...prev, assigneeId: res.data.assigneeId }));
+      } else {
+        alert("Could not find a confident suggestion.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to get suggestion.");
+    } finally {
+      setIsSuggesting(false);
+    }
   };
 
   const handleDragStart = (e, task) => { setDraggedTask(task); e.dataTransfer.effectAllowed = 'move'; };
@@ -326,6 +355,22 @@ const Tasks = () => {
                   <div><label className="block text-sm font-medium text-surface-700 mb-1.5">Story Points</label>
                     <input type="number" className="input" placeholder="e.g. 5" min="1" max="21" value={taskForm.storyPoints} onChange={e => setTaskForm({ ...taskForm, storyPoints: e.target.value })} /></div>
                 </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-surface-700">Assignee</label>
+                    <button type="button" onClick={handleSuggestAssignee} disabled={isSuggesting} className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1 disabled:opacity-50">
+                      {isSuggesting ? <span className="opacity-50">Suggesting...</span> : '🪄 Suggest'}
+                    </button>
+                  </div>
+                  <select className="select" value={taskForm.assigneeId} onChange={e => setTaskForm({ ...taskForm, assigneeId: e.target.value })}>
+                    <option value="">Unassigned</option>
+                    {orgMembers.map(m => (
+                      <option key={m.user?._id} value={m.user?._id}>{m.user?.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div><label className="block text-sm font-medium text-surface-700 mb-1.5">Labels (comma-separated)</label>
                   <input className="input" placeholder="frontend, bug, urgent" value={taskForm.labels} onChange={e => setTaskForm({ ...taskForm, labels: e.target.value })} /></div>
               </div>
@@ -398,9 +443,13 @@ const Tasks = () => {
                   <div><label className="text-xs text-surface-400 uppercase tracking-wider font-semibold">Story Points</label>
                     <p className="text-sm text-surface-700 mt-1">{selectedTask.storyPoints || '—'}</p></div>
                   <div><label className="text-xs text-surface-400 uppercase tracking-wider font-semibold">Assignee</label>
-                    {selectedTask.assigneeId ? (
-                      <div className="flex items-center gap-2 mt-1"><div className="avatar avatar-sm" style={{ background: getAvatarColor(selectedTask.assigneeId.name) }}>{getInitials(selectedTask.assigneeId.name)}</div><span className="text-sm text-surface-700">{selectedTask.assigneeId.name}</span></div>
-                    ) : <p className="text-sm text-surface-400 mt-1">Unassigned</p>}</div>
+                    <select className="select mt-1" value={selectedTask.assigneeId?._id || ''} onChange={e => { updateTask(selectedTask._id, { assigneeId: e.target.value || null }); setSelectedTask({ ...selectedTask, assigneeId: orgMembers.find(m => m.user?._id === e.target.value)?.user || null }); }}>
+                      <option value="">Unassigned</option>
+                      {orgMembers.map(m => (
+                        <option key={m.user?._id} value={m.user?._id}>{m.user?.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div><label className="text-xs text-surface-400 uppercase tracking-wider font-semibold">Due Date</label>
                     <p className="text-sm text-surface-700 mt-1">{selectedTask.dueDate ? formatDate(selectedTask.dueDate) : 'No due date'}</p></div>
                   {selectedTask.labels?.length > 0 && (
